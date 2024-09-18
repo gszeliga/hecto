@@ -1,7 +1,12 @@
+use std::io::Error;
+
 use crossterm::event::{read, Event, Event::Key, KeyCode::Char, KeyEvent, KeyModifiers};
 
 mod terminal;
 use terminal::{Position, Size, Terminal};
+
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct Editor {
     should_quit: bool,
@@ -19,7 +24,7 @@ impl Editor {
         result.unwrap();
     }
 
-    fn repl(&mut self) -> Result<(), std::io::Error> {
+    fn repl(&mut self) -> Result<(), Error> {
         loop {
             self.refresh_screen()?;
             if self.should_quit {
@@ -45,7 +50,7 @@ impl Editor {
         }
     }
 
-    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+    fn refresh_screen(&self) -> Result<(), Error> {
         Terminal::hide_cursor()?;
         if self.should_quit {
             Terminal::clear_screen()?;
@@ -59,14 +64,35 @@ impl Editor {
         Ok(())
     }
 
-    fn draw_rows() -> Result<(), std::io::Error> {
+    fn draw_rows() -> Result<(), Error> {
         let Size { columns: _, rows } = Terminal::size()?;
 
         for row in 0..rows {
             Terminal::clear_line()?;
-            Terminal::print("~\n")?;
+            if row == rows / 3 {
+                Self::draw_welcome_message()?;
+            } else {
+                Self::draw_empty_row()?;
+            }
             Terminal::move_cursor_to(Position { col: 0, row })?;
         }
+        Ok(())
+    }
+
+    fn draw_welcome_message() -> Result<(), Error> {
+        let mut msg = format!("{NAME} editor -- version {VERSION}");
+        let width = Terminal::size()?.columns as usize;
+        let padding = (width - msg.len()) / 2;
+        let margin = " ".repeat(padding - 1);
+
+        msg = format!("~{margin}{msg}");
+        msg.truncate(width);
+        Terminal::print(&msg)?;
+        Ok(())
+    }
+
+    fn draw_empty_row() -> Result<(), Error> {
+        Terminal::print("~\n")?;
         Ok(())
     }
 }
