@@ -11,19 +11,19 @@ pub struct Terminal;
 
 #[derive(Clone, Copy)]
 pub struct Size {
-    pub columns: u16,
-    pub rows: u16,
+    pub columns: usize,
+    pub rows: usize,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Position {
-    pub col: u16,
-    pub row: u16,
+    pub col: usize,
+    pub row: usize,
 }
 
 impl Terminal {
-    pub fn move_cursor_to(pos: Position) -> Result<(), Error> {
-        Self::queue_cmd(MoveTo(pos.col, pos.row))
+    pub fn move_caret_to(pos: Position) -> Result<(), Error> {
+        Self::queue_cmd(MoveTo(pos.col as u16, pos.row as u16))
     }
 
     pub fn clear_screen() -> Result<(), Error> {
@@ -37,7 +37,6 @@ impl Terminal {
     pub fn initialize() -> Result<(), Error> {
         enable_raw_mode()?;
         Self::clear_screen()?;
-        Self::move_cursor_to(Position { col: 0, row: 0 })?;
         Self::execute()?;
         Ok(())
     }
@@ -50,14 +49,17 @@ impl Terminal {
 
     pub fn size() -> Result<Size, Error> {
         let (columns, rows) = size()?;
-        Ok(Size { columns, rows })
+        Ok(Size {
+            columns: usize::from(columns),
+            rows: usize::from(rows),
+        })
     }
 
-    pub fn hide_cursor() -> Result<(), Error> {
+    pub fn hide_caret() -> Result<(), Error> {
         Self::queue_cmd(Hide)
     }
 
-    pub fn show_cursor() -> Result<(), Error> {
+    pub fn show_caret() -> Result<(), Error> {
         Self::queue_cmd(Show)
     }
 
